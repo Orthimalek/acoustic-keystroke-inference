@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this code or dataset, please cite as below."
+authors:
+  - family-names: Rane
+    given-names: Vinit
+    orcid: https://orcid.org/0009-0004-9740-8009
+    affiliation: "California State University, Dominguez Hills"
+title: "Acoustic Keystroke Inference: A Comparative Study of Hybrid Neural Network Architectures for Side-Channel Attacks"
+version: 1.0.0
+date-released: 2025-05-24
+url: "https://github.com/Orthimalek/acoustic-keystroke-inference"
+license: MIT
+keywords:
+  - acoustic side-channel attack
+  - keystroke inference
+  - CoAtNet
+  - MaxViT
+  - Swin Transformer
+  - mel-spectrogram
+  - transfer learning
+  - cybersecurity
