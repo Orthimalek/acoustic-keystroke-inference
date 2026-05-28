@@ -1,14 +1,35 @@
 cff-version: 1.2.0
 message: "If you use this code or dataset, please cite as below."
 authors:
-  - family-names: Rane
-    given-names: Vinit
-    orcid: https://orcid.org/0009-0004-9740-8009
+  - family-names: Roy
+    given-names: Dipta
+    orcid: https://orcid.org/0009-0006-7065-6146
+    affiliation: "California State University, Northridge"
+  - family-names: Rafid
+    given-names: Kazi Mushfiq
+    orcid: https://orcid.org/0009-0003-5271-2659
+    affiliation: "California State University, Northridge"
+  - family-names: Rahman
+    given-names: Muhammad Safwat
+    orcid: https://orcid.org/0009-0008-4200-0187
+    affiliation: "Southeast Missouri State University"
+  - family-names: Khan
+    given-names: Mohammad Arafath Uz Zaman
+    orcid: https://orcid.org/0009-0004-1046-763X
     affiliation: "California State University, Dominguez Hills"
+  - family-names: Hossain
+    given-names: Tarik
+    affiliation: "Sikkim Manipal University of Health, Medical and Technology Sciences"
+  - family-names: Orthi
+    given-names: Shuchona Malek
+    orcid: https://orcid.org/0009-0007-5397-4561
+    affiliation: "Westcliff University"
+    email: s.orthi.339@westcliff.edu
 title: "Acoustic Keystroke Inference: A Comparative Study of Hybrid Neural Network Architectures for Side-Channel Attacks"
 version: 1.0.0
-date-released: 2025-05-24
+date-released: 2025-05-27
 url: "https://github.com/Orthimalek/acoustic-keystroke-inference"
+doi: 10.5281/zenodo.20369332
 license: MIT
 keywords:
   - acoustic side-channel attack
@@ -17,5 +38,4 @@ keywords:
   - MaxViT
   - Swin Transformer
   - mel-spectrogram
-  - transfer learning
   - cybersecurity

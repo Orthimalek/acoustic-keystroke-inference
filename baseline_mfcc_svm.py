@@ -2,7 +2,7 @@
 MFCC + SVM Baseline Script
 ===========================
 Thesis: Acoustic Keystroke Inference
-Author: Vinit Rane | CSUDH CYB Program
+Author: Shuchona Malek Orthi | Westcliff University
 
 Implements classical MFCC + SVM baseline for comparison against
 deep learning models. Standard in ASCA literature.

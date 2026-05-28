@@ -2,35 +2,34 @@
 Cross-Dataset Generalization Experiment
 =========================================
 Thesis: Acoustic Keystroke Inference
-Author: Vinit Rane | CSUDH CYB Program
+Author: Shuchona Malek Orthi | Westcliff University
 
-Evaluates model generalization across datasets:
-  1. Train on MKA → Test on Custom E1
-  2. Train on Custom E1 → Test on MKA
-  3. Train on MacBook (Custom) → Test on Dell (when available)
-  4. Train on E1 → Test on E2 (environment transfer)
+Experiments:
+  1. mka_to_custom    — Train on MKA → Test on Custom E1
+  2. custom_to_mka    — Train on Custom E1 → Test on MKA
+  3. e1_to_e2         — Train on MacBook E1 → Test on MacBook E2
+  4. macbook_to_dell  — Train on MacBook E1 → Test on Dell E1
+  5. dell_to_macbook  — Train on Dell E1 → Test on MacBook E1  [NEW]
+  6. all              — Run all above
 
 Usage:
-    python cross_dataset.py --experiment all \
-        --root "/Users/dominik/Downloads/Multi-Keyboard Acoustic (MKA) Datasets/MKA datasets" \
-        --model coatnet
+    python cross_dataset.py --experiment dell_to_macbook --model coatnet --epochs 100
+    python cross_dataset.py --experiment all --model coatnet --epochs 100
 """
 
-import argparse
-import time
-import json
+import argparse, time, json
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, ConcatDataset
+from torch.utils.data import DataLoader
 
 try:
     import timm
 except ImportError:
-    raise ImportError("Run: python -m pip install timm")
+    raise ImportError("Run: pip install timm")
 
 import sys
 sys.path.append(str(Path(__file__).parent))
@@ -46,7 +45,6 @@ def get_device():
     elif torch.cuda.is_available():
         return torch.device("cuda")
     return torch.device("cpu")
-
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 
@@ -64,7 +62,6 @@ def build_model(name: str, num_classes: int = 36) -> nn.Module:
     print(f"[Model] {name} | Params: {params:,}")
     return m
 
-
 # ── Train / Eval ──────────────────────────────────────────────────────────────
 
 def train_one_epoch(model, loader, optimizer, criterion, device, scheduler=None):
@@ -80,10 +77,8 @@ def train_one_epoch(model, loader, optimizer, criterion, device, scheduler=None)
         total_loss += loss.item() * images.size(0)
         correct += (outputs.argmax(1) == labels).sum().item()
         total += images.size(0)
-    if scheduler:
-        scheduler.step()
+    if scheduler: scheduler.step()
     return total_loss / total, correct / total
-
 
 @torch.no_grad()
 def evaluate(model, loader, criterion, device):
@@ -101,7 +96,6 @@ def evaluate(model, loader, criterion, device):
         all_labels.extend(labels.cpu().numpy())
     return total_loss / total, correct / total, all_preds, all_labels
 
-
 @torch.no_grad()
 def topk_accuracy(model, loader, device, k_values=[1, 3, 5]):
     model.eval()
@@ -112,27 +106,17 @@ def topk_accuracy(model, loader, device, k_values=[1, 3, 5]):
         outputs = model(images)
         for k in k_values:
             topk = outputs.topk(k, dim=1).indices
-            correct = topk.eq(labels.unsqueeze(1).expand_as(topk)).any(dim=1).sum().item()
-            results[k] += correct
+            results[k] += topk.eq(labels.unsqueeze(1).expand_as(topk)).any(dim=1).sum().item()
         total += images.size(0)
     return {k: round(v / total, 4) for k, v in results.items()}
 
+# ── Cross-dataset experiment runner ──────────────────────────────────────────
 
-# ── Cross-dataset experiment ──────────────────────────────────────────────────
-
-def run_cross_experiment(
-    experiment_name: str,
-    train_ds,
-    test_ds,
-    model_name: str,
-    epochs: int,
-    batch_size: int,
-    lr: float,
-    output_dir: Path,
-) -> Dict:
+def run_cross_experiment(experiment_name, train_ds, test_ds, model_name,
+                         epochs, batch_size, lr, output_dir) -> Dict:
     device = get_device()
-
     from torch.utils.data import random_split
+
     n = len(train_ds)
     n_train = int(n * 0.85)
     n_val   = n - n_train
@@ -168,10 +152,8 @@ def run_cross_experiment(
             torch.save(model.state_dict(), best_ckpt)
 
         if epoch % 10 == 0 or epoch == 1:
-            elapsed = time.time() - start
-            print(f"  Ep {epoch:4d}/{epochs} | Train: {t_acc:.4f} | Val: {v_acc:.4f} | Best Val: {best_val_acc:.4f} | {elapsed:.0f}s")
+            print(f"  Ep {epoch:4d}/{epochs} | Train: {t_acc:.4f} | Val: {v_acc:.4f} | Best Val: {best_val_acc:.4f} | {time.time()-start:.0f}s")
 
-    # Final test evaluation
     model.load_state_dict(torch.load(best_ckpt, map_location=device))
     test_loss, test_acc, preds, labels = evaluate(model, test_loader, criterion, device)
     topk = topk_accuracy(model, test_loader, device)
@@ -182,48 +164,39 @@ def run_cross_experiment(
     print(f"{'='*60}\n")
 
     result = {
-        "experiment": experiment_name,
-        "model": model_name,
-        "best_val_acc": round(best_val_acc, 4),
-        "test_acc": round(test_acc, 4),
-        "test_loss": round(test_loss, 4),
-        "topk": topk,
-        "predictions": preds,
-        "labels": labels,
+        "experiment": experiment_name, "model": model_name,
+        "best_val_acc": round(best_val_acc, 4), "test_acc": round(test_acc, 4),
+        "test_loss": round(test_loss, 4), "topk": topk,
     }
-
     out_path = output_dir / f"{experiment_name}_{model_name}_result.json"
-    save_result = {k: v for k, v in result.items() if k not in ["predictions", "labels"]}
     with open(out_path, "w") as f:
-        json.dump(save_result, f, indent=2)
+        json.dump(result, f, indent=2)
     print(f"[Saved] {out_path}")
     return result
 
+# ── Dataset loaders ───────────────────────────────────────────────────────────
 
-# ── Experiment definitions ────────────────────────────────────────────────────
-
-def get_mka_dataset(root: str):
+def get_mka_dataset(root):
     return MKADataset(root=root, platform="all", task="alphanumeric", augment=False)
 
-def get_custom_dataset(env: str, max_clips: int = 50):
+def get_custom_dataset(env, max_clips=50):
     return CustomKeystrokeDataset(ENV_PATHS[env], max_clips=max_clips, augment=False)
 
-def get_dell_dataset(env: str, max_clips: int = 50):
-    dell_path = Path.home() / f"Downloads/CustomDataset/Dell_{env}_clean/segmented" if env == "E1" else \
-                Path.home() / f"Downloads/CustomDataset/Dell_{env}_window/segmented"
+def get_dell_dataset(env, max_clips=50):
+    suffix = "clean" if env == "E1" else "window"
+    dell_path = Path.home() / f"Downloads/CustomDataset/Dell_{env}_{suffix}/segmented"
     if not dell_path.exists():
-        print(f"[Skip] Dell {env} dataset not found at {dell_path}")
+        print(f"[Skip] Dell {env} not found at {dell_path}")
         return None
     return CustomKeystrokeDataset(dell_path, max_clips=max_clips, augment=False)
-
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment", default="all",
-                        choices=["mka_to_custom", "custom_to_mka",
-                                 "e1_to_e2", "macbook_to_dell", "all"])
+                        choices=["mka_to_custom", "custom_to_mka", "e1_to_e2",
+                                 "macbook_to_dell", "dell_to_macbook", "all"])
     parser.add_argument("--model",      default="coatnet",
                         choices=["coatnet", "maxvit", "swin", "all"])
     parser.add_argument("--root",       type=str,
@@ -234,41 +207,36 @@ if __name__ == "__main__":
     parser.add_argument("--output_dir", type=str,   default="./results/cross_dataset")
     args = parser.parse_args()
 
-    output_dir  = Path(args.output_dir)
-    models      = ["coatnet", "maxvit"] if args.model == "all" else [args.model]
+    output_dir = Path(args.output_dir)
+    models     = ["coatnet", "maxvit", "swin"] if args.model == "all" else [args.model]
     experiments = []
 
     if args.experiment in ["mka_to_custom", "all"]:
-        mka_ds     = get_mka_dataset(args.root)
-        custom_e1  = get_custom_dataset("E1")
-        experiments.append(("MKA_to_CustomE1", mka_ds, custom_e1))
+        experiments.append(("MKA_to_CustomE1", get_mka_dataset(args.root), get_custom_dataset("E1")))
 
     if args.experiment in ["custom_to_mka", "all"]:
-        custom_e1  = get_custom_dataset("E1")
-        mka_ds     = get_mka_dataset(args.root)
-        experiments.append(("CustomE1_to_MKA", custom_e1, mka_ds))
+        experiments.append(("CustomE1_to_MKA", get_custom_dataset("E1"), get_mka_dataset(args.root)))
 
     if args.experiment in ["e1_to_e2", "all"]:
-        e1_ds = get_custom_dataset("E1")
-        e2_ds = get_custom_dataset("E2")
-        experiments.append(("E1_to_E2", e1_ds, e2_ds))
+        experiments.append(("E1_to_E2", get_custom_dataset("E1"), get_custom_dataset("E2")))
 
     if args.experiment in ["macbook_to_dell", "all"]:
+        dell = get_dell_dataset("E1")
+        if dell: experiments.append(("MacBook_to_Dell", get_custom_dataset("E1"), dell))
+
+    if args.experiment in ["dell_to_macbook", "all"]:
+        dell = get_dell_dataset("E1")
         macbook = get_custom_dataset("E1")
-        dell    = get_dell_dataset("E1")
-        if dell is not None:
-            experiments.append(("MacBook_to_Dell", macbook, dell))
+        if dell: experiments.append(("Dell_to_MacBook", dell, macbook))
 
     all_results = []
     for exp_name, train_ds, test_ds in experiments:
         for model_name in models:
-            result = run_cross_experiment(
-                exp_name, train_ds, test_ds,
-                model_name, args.epochs, args.batch_size, args.lr, output_dir
-            )
-            all_results.append(result)
+            r = run_cross_experiment(exp_name, train_ds, test_ds,
+                                     model_name, args.epochs, args.batch_size,
+                                     args.lr, output_dir)
+            all_results.append(r)
 
-    # Summary table
     print("\n" + "="*70)
     print(f"  {'Experiment':<25} {'Model':<10} {'Val Acc':>9} {'Test Acc':>9} {'Top-3':>8}")
     print("-"*70)
@@ -280,8 +248,6 @@ if __name__ == "__main__":
     print("="*70)
 
     summary_path = output_dir / "cross_dataset_summary.json"
-    save_all = [{k: v for k, v in r.items() if k not in ["predictions", "labels"]}
-                for r in all_results]
     with open(summary_path, "w") as f:
-        json.dump(save_all, f, indent=2)
+        json.dump(all_results, f, indent=2)
     print(f"\n[Saved] {summary_path}")

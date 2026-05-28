@@ -3,7 +3,7 @@ Acoustic Keystroke Inference — Model Training Script
 =====================================================
 Thesis: Acoustic Keystroke Inference: A Comparative Study of Hybrid
         Neural Network Architectures for Side Channel Attacks
-Author: Vinit Rane | CSUDH CYB Program
+Author: Shuchona Malek Orthi | Westcliff University
 
 Models compared:
   1. CoAtNet-0   — Harrison et al. (2023) baseline (hybrid CNN + attention)

@@ -2,7 +2,7 @@
 Thesis Figures & Analysis Script
 ==================================
 Thesis: Acoustic Keystroke Inference
-Author: Vinit Rane | CSUDH CYB Program
+Author: Shuchona Malek Orthi | Westcliff University
 
 Generates all publication-quality figures for the paper:
   Fig 1 — System pipeline diagram

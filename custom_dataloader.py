@@ -3,7 +3,7 @@ Custom Keystroke Dataset Loader
 ================================
 Thesis: Acoustic Keystroke Inference: A Comparative Study of Hybrid
         Neural Network Architectures for Side Channel Attacks
-Author: Vinit Rane | CSUDH CYB Program
+Author: Shuchona Malek Orthi | Westcliff University
 
 Loads segmented custom keystroke recordings from:
     ~/Downloads/CustomDataset/E1_clean/segmented/{key}/*.wav

@@ -3,7 +3,7 @@ Acoustic Keystroke Segmentation Script
 =======================================
 Thesis: Acoustic Keystroke Inference: A Comparative Study of Hybrid
         Neural Network Architectures for Side Channel Attacks
-Author: Vinit Rane | CSUDH CYB Program
+Author: Shuchona Malek Orthi | Westcliff University
 
 Splits raw multi-press WAV recordings into individual keystroke clips
 using librosa onset detection with amplitude normalisation.

@@ -2,7 +2,7 @@
 Multi-Seed Training Script — Statistical Validation
 =====================================================
 Thesis: Acoustic Keystroke Inference
-Author: Vinit Rane | CSUDH CYB Program
+Author: Shuchona Malek Orthi | Westcliff University
 
 Runs each model × dataset combination across 5 random seeds.
 Reports mean ± std for all accuracy metrics.
